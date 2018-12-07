@@ -37,7 +37,9 @@ var clear = require('clear');
 var moment = require('moment');
 //clear();
 
-var version = 'v1.0.4';
+var version = 'v1.0.5.WIP4';
+/*adding "full battery safety" (extra amount)*/
+/*changed initial UPV from 117V to 118V*/
 /* changed Ipv>0.55 to 0.45 and Vpv from 250 to 275*/
 /* changed upv from 275 to 350*/
 const rl = readline.createInterface({
@@ -642,7 +644,7 @@ app.post('/', function (req, res) {
 
   function processInitialTelemetry()
   {
-    if(value.values.U_PV < 315 && value.values.U_PV > 300 && value.values.U_bat < 30 && value.values.U_bat > 23 && value.values.I_PV == 0 && value.values.I_bat == 0 && value.values.rDC == 0 && value.values.rLet == 0)
+    if(value.values.U_PV < 318 && value.values.U_PV > 300 && value.values.U_bat < 30 && value.values.U_bat > 23 && value.values.I_PV == 0 && value.values.I_bat == 0 && value.values.rDC == 0 && value.values.rLet == 0)
     {
       console.log('Intial telemetry seems to be fine'.green);
       logger.write('Intial telemetry seems to be fine \n');
@@ -1099,8 +1101,18 @@ app.post('/', function (req, res) {
 
   function monitorTelemetryDecharge()
   {
-    var counter = 0;
-    var amount = 15;
+	var amount = 15;
+    	var counter = 0;
+
+	if(value.values.U_bat > 24)
+	{
+   	 amount = 30;
+	}
+	else
+	{
+	 amount = 15;
+	}
+
     var no_errors = true;
 
     var timeoutFunction = function(i) {
@@ -1116,7 +1128,18 @@ app.post('/', function (req, res) {
             timeout = setTimeout(timeoutFunction(i+1), 5000);
           }
 
-          for (k=0; k<= (amount/5)-1; k++)
+		//var extra_amount = 0;//variable to prevent full battery
+
+		//if(value.values.U_bat > 24)
+		//{
+		//extra_amount = 30;
+		//}
+		//else
+		//{
+		//extra_amount = 0;
+		//}
+
+          for (k=0; k<= ((amount)/5)-1; k++)
           {
             if (counter == k*5)
             {
@@ -1124,6 +1147,7 @@ app.post('/', function (req, res) {
               //publishMessage('Still ' + difference +' cycles to go, please wait...');
             }
           }
+	
 
           if (counter == amount && value.values.U_PV > 200 && value.values.U_PV <350 && value.values.U_bat > 22 && value.values.U_bat < 26
             && value.values.I_bat > -10 && value.values.I_bat < -7 && value.values.I_PV < 1 && value.values.I_PV > 0.45)
